@@ -130,9 +130,16 @@ adam = tf.train.AdamOptimizer(learning_rate=0.0002)
 trainerD = adam.minimize(d_loss, var_list=d_vars)
 trainerG = adam.minimize(g_loss, var_list=g_vars)
 
+tf.summary.scalar('Generator_loss', g_loss)
+tf.summary.scalar('Discriminator_loss', d_loss)
+
+merged = tf.summary.merge_all()
+logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/"
+writer = tf.summary.FileWriter(logdir, sess.graph)
+
 sess.run(tf.global_variables_initializer())
 
-iterations = 50000
+iterations = 200
 for i in range(iterations):
     z_batch = np.random.uniform(-1, 1, size=[batch_size, z_dimensions])
     real_image_batch = mnist.train.next_batch(batch_size)
@@ -141,7 +148,7 @@ for i in range(iterations):
     # _, gLoss = sess.run([trainerG, g_loss], feed_dict={z_placeholder:z_batch})
     # print('dLoss: {}'.format(dLoss))
 
-iterations = 100000
+iterations = 3000
 for i in range(iterations):
     z_batch = np.random.uniform(-1, 1, size=[batch_size, z_dimensions])
     real_image_batch = mnist.train.next_batch(batch_size)
@@ -149,6 +156,11 @@ for i in range(iterations):
     _, dLoss = sess.run([trainerD, d_loss], feed_dict={z_placeholder:z_batch, x_placeholder:real_image_batch})
     _, gLoss = sess.run([trainerG, g_loss], feed_dict={z_placeholder:z_batch})
     # print('dLoss: {}, gLoss: {}'.format(dLoss, gLoss))
+    if i % 10 == 0:
+        # Update TensorBoard with summary statistics
+        z_batch = np.random.normal(0, 1, size=[batch_size, z_dimensions])
+        summary = sess.run(merged, {z_placeholder: z_batch, x_placeholder: real_image_batch})
+        writer.add_summary(summary, i)
     if i % 1000 == 0:
         # Every 1000 iterations, show a generated image
         print("Iteration:", i, "at", datetime.datetime.now())
