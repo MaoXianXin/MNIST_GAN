@@ -1,6 +1,7 @@
 import tensorflow as tf
 import random
 import numpy as np
+import datetime
 import matplotlib.pyplot as plt
 # %matplotlib inline
 
@@ -148,6 +149,14 @@ for i in range(iterations):
     _, dLoss = sess.run([trainerD, d_loss], feed_dict={z_placeholder:z_batch, x_placeholder:real_image_batch})
     _, gLoss = sess.run([trainerG, g_loss], feed_dict={z_placeholder:z_batch})
     # print('dLoss: {}, gLoss: {}'.format(dLoss, gLoss))
+    if i % 1000 == 0:
+        # Every 1000 iterations, show a generated image
+        print("Iteration:", i, "at", datetime.datetime.now())
+        z_batch = np.random.normal(0, 1, size=[1, z_dimensions])
+        generated_images = generator(z_placeholder, 1, z_dimensions, reuse=True)
+        images = sess.run(generated_images, {z_placeholder: z_batch})
+        plt.imshow(images[0].reshape([28, 28]), cmap='Greys')
+        plt.show()
 
 sample_image = generator(z_placeholder, 1, z_dimensions, reuse=True)
 z_batch = np.random.uniform(-1, 1, size=[1, z_dimensions])
