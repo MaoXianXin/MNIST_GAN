@@ -148,7 +148,7 @@ writer = tf.summary.FileWriter(tensorboard_logdir, sess.graph)
 sess.run(tf.global_variables_initializer())
 
 # Add ops to save and restore all the variables.
-saver = tf.train.Saver()
+saver = tf.train.Saver(max_to_keep=10)
 checkpoint_logdir = "./checkpoint/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/model.ckpt"
 os.makedirs(checkpoint_logdir)
 
