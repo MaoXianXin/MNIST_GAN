@@ -142,14 +142,15 @@ tf.summary.scalar('Discriminator_loss_fake', d_loss_fake)
 # images_for_tensorboard = generator(z_placeholder, batch_size, z_dimensions)
 # tf.summary.image('Generated_images', images_for_tensorboard, 5)
 merged = tf.summary.merge_all()
-logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/"
-writer = tf.summary.FileWriter(logdir, sess.graph)
+tensorboard_logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/"
+writer = tf.summary.FileWriter(tensorboard_logdir, sess.graph)
 
 sess.run(tf.global_variables_initializer())
 
 # Add ops to save and restore all the variables.
 saver = tf.train.Saver()
-logdir = "./checkpoint/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/model.ckpt"
+checkpoint_logdir = "./checkpoint/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/model.ckpt"
+os.makedirs(checkpoint_logdir)
 
 # Pre-train discriminator
 for i in range(1000):
@@ -183,17 +184,8 @@ for i in range(1000000):
         summary = sess.run(merged, {z_placeholder: z_batch, x_placeholder: real_image_batch})
         writer.add_summary(summary, i)
 
-    if i % 5000 == 0:
-        # Every 100 iterations, show a generated image
-        print("Iteration:", i, "at", datetime.datetime.now())
-        z_batch = np.random.normal(0, 1, size=[1, z_dimensions])
-        generated_images = generator(z_placeholder, 1, z_dimensions)
-        images = sess.run(generated_images, {z_placeholder: z_batch})
-        plt.imshow(images[0].reshape([28, 28]), cmap='Greys')
-        plt.show()
 
     if i % 200000 == 0:
         # Save the variables to disk.
-        os.makedirs(logdir)
-        save_path = saver.save(sess, logdir)
+        save_path = saver.save(sess, checkpoint_logdir, global_step=i)
         print("Model saved in path: %s" % save_path)
