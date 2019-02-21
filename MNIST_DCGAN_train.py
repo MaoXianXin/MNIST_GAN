@@ -3,7 +3,8 @@ import random
 import numpy as np
 import datetime
 import matplotlib.pyplot as plt
-# %matplotlib inline
+import os
+%matplotlib inline
 
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets("MNIST_data/")
@@ -105,7 +106,7 @@ def generator(z, batch_size, z_dim, reuse=False):
     return H_conv4
 
 z_dimensions = 100
-batch_size = 32
+batch_size = 128
 tf.reset_default_graph()
 
 sess = tf.Session()
@@ -134,33 +135,42 @@ tf.summary.scalar('Generator_loss', g_loss)
 tf.summary.scalar('Discriminator_loss', d_loss)
 
 merged = tf.summary.merge_all()
-logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/"
+logdir = "DCGAN_tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/"
 writer = tf.summary.FileWriter(logdir, sess.graph)
 
 sess.run(tf.global_variables_initializer())
 
-iterations = 200
-for i in range(iterations):
-    z_batch = np.random.uniform(-1, 1, size=[batch_size, z_dimensions])
-    real_image_batch = mnist.train.next_batch(batch_size)
-    real_image_batch = np.reshape(real_image_batch[0], [batch_size, 28, 28, 1])
-    _, dLoss = sess.run([trainerD, d_loss], feed_dict={z_placeholder:z_batch, x_placeholder:real_image_batch})
-    # _, gLoss = sess.run([trainerG, g_loss], feed_dict={z_placeholder:z_batch})
-    # print('dLoss: {}'.format(dLoss))
+# Add ops to save and restore all the variables.
+saver = tf.train.Saver(max_to_keep=10)
+checkpoint_logdir = "./DCGAN_checkpoint/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/model.ckpt"
+os.makedirs(checkpoint_logdir)
 
-iterations = 3000
+# iterations = 200
+# for i in range(iterations):
+#     z_batch = np.random.uniform(-1, 1, size=[batch_size, z_dimensions])
+#     real_image_batch = mnist.train.next_batch(batch_size)
+#     real_image_batch = np.reshape(real_image_batch[0], [batch_size, 28, 28, 1])
+#     _, dLoss = sess.run([trainerD, d_loss], feed_dict={z_placeholder:z_batch, x_placeholder:real_image_batch})
+#     # _, gLoss = sess.run([trainerG, g_loss], feed_dict={z_placeholder:z_batch})
+#     # print('dLoss: {}'.format(dLoss))
+
+iterations = 3000000
 for i in range(iterations):
     z_batch = np.random.uniform(-1, 1, size=[batch_size, z_dimensions])
     real_image_batch = mnist.train.next_batch(batch_size)
     real_image_batch = np.reshape(real_image_batch[0], [batch_size, 28, 28, 1])
     _, dLoss = sess.run([trainerD, d_loss], feed_dict={z_placeholder:z_batch, x_placeholder:real_image_batch})
     _, gLoss = sess.run([trainerG, g_loss], feed_dict={z_placeholder:z_batch})
+    # train generator twice
+    z_batch = np.random.uniform(-1, 1, size=[batch_size, z_dimensions])
+    _, gLoss = sess.run([trainerG, g_loss], feed_dict={z_placeholder: z_batch})
     # print('dLoss: {}, gLoss: {}'.format(dLoss, gLoss))
-    if i % 10 == 0:
+    if i % 100 == 0:
         # Update TensorBoard with summary statistics
         z_batch = np.random.normal(0, 1, size=[batch_size, z_dimensions])
         summary = sess.run(merged, {z_placeholder: z_batch, x_placeholder: real_image_batch})
         writer.add_summary(summary, i)
+
     if i % 1000 == 0:
         # Every 1000 iterations, show a generated image
         print("Iteration:", i, "at", datetime.datetime.now())
@@ -170,9 +180,7 @@ for i in range(iterations):
         plt.imshow(images[0].reshape([28, 28]), cmap='Greys')
         plt.show()
 
-sample_image = generator(z_placeholder, 1, z_dimensions, reuse=True)
-z_batch = np.random.uniform(-1, 1, size=[1, z_dimensions])
-temp = (sess.run(sample_image, feed_dict={z_placeholder:z_batch}))
-my_i = temp.squeeze()
-plt.imshow(my_i, cmap='gray_r')
-plt.show()
+    if i % 200000 == 0:
+        # Save the variables to disk.
+        save_path = saver.save(sess, checkpoint_logdir, global_step=i)
+        print("Model saved in path: %s" % save_path)
