@@ -4,7 +4,7 @@ import numpy as np
 import datetime
 import matplotlib.pyplot as plt
 import os
-%matplotlib inline
+#%matplotlib inline
 
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets("MNIST_data/")
@@ -127,9 +127,9 @@ tvars = tf.trainable_variables()
 d_vars = [var for var in tvars if 'd_' in var.name]
 g_vars = [var for var in tvars if 'g_' in var.name]
 
-adam = tf.train.AdamOptimizer(learning_rate=0.0002)
-trainerD = adam.minimize(d_loss, var_list=d_vars)
-trainerG = adam.minimize(g_loss, var_list=g_vars)
+
+trainerD = tf.train.AdamOptimizer(learning_rate=0.00002).minimize(d_loss, var_list=d_vars)
+trainerG = tf.train.AdamOptimizer(learning_rate=0.0002).minimize(g_loss, var_list=g_vars)
 
 tf.summary.scalar('Generator_loss', g_loss)
 tf.summary.scalar('Discriminator_loss', d_loss)
@@ -138,12 +138,12 @@ merged = tf.summary.merge_all()
 logdir = "DCGAN_tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/"
 writer = tf.summary.FileWriter(logdir, sess.graph)
 
-sess.run(tf.global_variables_initializer())
-
 # Add ops to save and restore all the variables.
 saver = tf.train.Saver(max_to_keep=10)
 checkpoint_logdir = "./DCGAN_checkpoint/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/model.ckpt"
 os.makedirs(checkpoint_logdir)
+
+sess.run(tf.global_variables_initializer())
 
 # iterations = 200
 # for i in range(iterations):
